@@ -1,0 +1,41 @@
+#!/bin/bash
+create_directory_structure(){
+	path=$1
+	source_file=$2
+	echo "Would create file $path with content of file $source_file"
+	target_name=$(basename $path)
+	target_dir=$(dirname $path)
+	mkdir -p $target_dir
+	cat $source_file > $path
+}
+
+main(){
+for f in *.php; do
+	echo $f;
+ # Root namesapce is not part of directory so skip it
+ matches=$(cat "$f" | perl -0777 -ne '/namespace App\\([^;]+)(?:.*?)(?:class|interface)\s+([a-zA-Z0-9]+)/s && print $1,",",$2')
+ namespace=$(echo $matches | cut -d ',' -f1)
+ classname=$(echo $matches | cut -d ',' -f2)
+ # echo $namespace " - " $classname;
+ filepath=$(echo $namespace | perl -pe 's@\\@/@g')
+ filepath="$filepath/$classname.php"
+ case $filepath in
+ 	"/.php")
+	;;
+	*)
+ 	# echo "$namespace File path = $filepath"
+	create_directory_structure  "${1%/}/$filepath" "$f"
+	;;
+esac
+done
+}
+
+
+if [ -z "$1" ]; then
+	echo "Specify a target directory where structure should be dumped";
+	exit 1;
+fi
+
+
+
+main "$1"
